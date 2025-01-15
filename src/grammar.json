@@ -1,0 +1,783 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
+  "name": "lys",
+  "rules": {
+    "document": {
+      "type": "SYMBOL",
+      "name": "directives"
+    },
+    "directives": {
+      "type": "REPEAT1",
+      "content": {
+        "type": "SYMBOL",
+        "name": "directive"
+      }
+    },
+    "directive": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "val_directive"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "var_directive"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "import_directive"
+        }
+      ]
+    },
+    "val_directive": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "private_modifier"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "val_declaration"
+        }
+      ]
+    },
+    "var_directive": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "private_modifier"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "var_declaration"
+        }
+      ]
+    },
+    "import_directive": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "IMPORT_KEYWORD"
+          },
+          "named": false,
+          "value": "import"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "qname"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "as"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "name_identifier"
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        }
+      ]
+    },
+    "private_modifier": {
+      "type": "ALIAS",
+      "content": {
+        "type": "SYMBOL",
+        "name": "PRIVATE_KEYWORD"
+      },
+      "named": false,
+      "value": "private"
+    },
+    "val_declaration": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "VAL_KEYWORD"
+          },
+          "named": false,
+          "value": "val"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "name_identifier"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "of_type"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "assign"
+        }
+      ]
+    },
+    "var_declaration": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "VAR_KEYWORD"
+          },
+          "named": false,
+          "value": "var"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "name_identifier"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "of_type"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "assign"
+        }
+      ]
+    },
+    "unknown_expression": {
+      "type": "STRING",
+      "value": "???"
+    },
+    "assign": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "="
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "expression"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "unknown_expression"
+            }
+          ]
+        }
+      ]
+    },
+    "of_type": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "COLON"
+          },
+          "named": false,
+          "value": ":"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "function_effect"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "SYMBOL",
+          "name": "type"
+        }
+      ]
+    },
+    "function_effect": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "<"
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "type"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": ">"
+        }
+      ]
+    },
+    "type": {
+      "type": "SYMBOL",
+      "name": "union_type"
+    },
+    "union_type": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "intersection_type"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "|"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "intersection_type"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "intersection_type": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "atom_type"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "&"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "atom_type"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "atom_type": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "type_paren"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "function_type_literal"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "reference"
+        }
+      ]
+    },
+    "type_paren": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "OPEN_PAREN"
+          },
+          "named": false,
+          "value": "("
+        },
+        {
+          "type": "SYMBOL",
+          "name": "type"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "CLOSE_PAREN"
+          },
+          "named": false,
+          "value": ")"
+        }
+      ]
+    },
+    "function_type_literal": {
+      "type": "STRING",
+      "value": "func type literal"
+    },
+    "expression": {
+      "type": "STRING",
+      "value": "expr"
+    },
+    "reference": {
+      "type": "SYMBOL",
+      "name": "qname"
+    },
+    "name_identifier": {
+      "type": "PATTERN",
+      "value": "\\$?[A-Za-z_][A-Za-z0-9_$]*"
+    },
+    "qname": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "name_identifier"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "STRING",
+                  "value": "::"
+                }
+              },
+              {
+                "type": "SYMBOL",
+                "name": "name_identifier"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "KEYWORD": {
+      "type": "TOKEN",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "TRUE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "FALSE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "IF_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "ELSE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "CASE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "VAR_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "VAL_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "TYPE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "ENUM_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "TRAIT_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "EFFECT_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "IMPL_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "FOR_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "IMPORT_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "FUN_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "STRUCT_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "PRIVATE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "MATCH_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "LOOP_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "CONTINUE_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "BREAK_KEYWORD"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "RESERVED_WORDS"
+          }
+        ]
+      }
+    },
+    "WASM_KEYWORD": {
+      "type": "STRING",
+      "value": "%wasm"
+    },
+    "STRUCT_LITERAL_KEYWORD": {
+      "type": "STRING",
+      "value": "%struct"
+    },
+    "STACK_LITERAL_KEYWORD": {
+      "type": "STRING",
+      "value": "%stack"
+    },
+    "INJECTED_LITERAL_KEYWORD": {
+      "type": "STRING",
+      "value": "%injected"
+    },
+    "FUN_KEYWORD": {
+      "type": "STRING",
+      "value": "fun"
+    },
+    "VAL_KEYWORD": {
+      "type": "STRING",
+      "value": "val"
+    },
+    "VAR_KEYWORD": {
+      "type": "STRING",
+      "value": "var"
+    },
+    "EFFECT_KEYWORD": {
+      "type": "STRING",
+      "value": "effect"
+    },
+    "IMPL_KEYWORD": {
+      "type": "STRING",
+      "value": "impl"
+    },
+    "FOR_KEYWORD": {
+      "type": "STRING",
+      "value": "for"
+    },
+    "IMPORT_KEYWORD": {
+      "type": "STRING",
+      "value": "import"
+    },
+    "STRUCT_KEYWORD": {
+      "type": "STRING",
+      "value": "struct"
+    },
+    "PRIVATE_KEYWORD": {
+      "type": "STRING",
+      "value": "private"
+    },
+    "TYPE_KEYWORD": {
+      "type": "STRING",
+      "value": "type"
+    },
+    "ENUM_KEYWORD": {
+      "type": "STRING",
+      "value": "enum"
+    },
+    "TRAIT_KEYWORD": {
+      "type": "STRING",
+      "value": "trait"
+    },
+    "CASE_KEYWORD": {
+      "type": "STRING",
+      "value": "case"
+    },
+    "LOOP_KEYWORD": {
+      "type": "STRING",
+      "value": "loop"
+    },
+    "CONTINUE_KEYWORD": {
+      "type": "STRING",
+      "value": "continue"
+    },
+    "BREAK_KEYWORD": {
+      "type": "STRING",
+      "value": "break"
+    },
+    "TRUE_KEYWORD": {
+      "type": "STRING",
+      "value": "true"
+    },
+    "FALSE_KEYWORD": {
+      "type": "STRING",
+      "value": "false"
+    },
+    "IF_KEYWORD": {
+      "type": "STRING",
+      "value": "if"
+    },
+    "ELSE_KEYWORD": {
+      "type": "STRING",
+      "value": "else"
+    },
+    "MATCH_KEYWORD": {
+      "type": "STRING",
+      "value": "match"
+    },
+    "RESERVED_WORDS": {
+      "type": "TOKEN",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "abstract"
+          },
+          {
+            "type": "STRING",
+            "value": "async"
+          },
+          {
+            "type": "STRING",
+            "value": "await"
+          },
+          {
+            "type": "STRING",
+            "value": "class"
+          },
+          {
+            "type": "STRING",
+            "value": "const"
+          },
+          {
+            "type": "STRING",
+            "value": "declare"
+          },
+          {
+            "type": "STRING",
+            "value": "defer"
+          },
+          {
+            "type": "STRING",
+            "value": "delete"
+          },
+          {
+            "type": "STRING",
+            "value": "do"
+          },
+          {
+            "type": "STRING",
+            "value": "extends"
+          },
+          {
+            "type": "STRING",
+            "value": "finally"
+          },
+          {
+            "type": "STRING",
+            "value": "for"
+          },
+          {
+            "type": "STRING",
+            "value": "import"
+          },
+          {
+            "type": "STRING",
+            "value": "is"
+          },
+          {
+            "type": "STRING",
+            "value": "in"
+          },
+          {
+            "type": "STRING",
+            "value": "let"
+          },
+          {
+            "type": "STRING",
+            "value": "new"
+          },
+          {
+            "type": "STRING",
+            "value": "package"
+          },
+          {
+            "type": "STRING",
+            "value": "protected"
+          },
+          {
+            "type": "STRING",
+            "value": "public"
+          },
+          {
+            "type": "STRING",
+            "value": "try"
+          },
+          {
+            "type": "STRING",
+            "value": "using"
+          },
+          {
+            "type": "STRING",
+            "value": "while"
+          },
+          {
+            "type": "STRING",
+            "value": "yield"
+          }
+        ]
+      }
+    },
+    "OPEN_PAREN": {
+      "type": "STRING",
+      "value": "("
+    },
+    "CLOSE_PAREN": {
+      "type": "STRING",
+      "value": ")"
+    },
+    "OPEN_ARRAY": {
+      "type": "STRING",
+      "value": "["
+    },
+    "OPEN_DECORATION": {
+      "type": "STRING",
+      "value": "#["
+    },
+    "CLOSE_ARRAY": {
+      "type": "STRING",
+      "value": "]"
+    },
+    "STRING_DELIMITER": {
+      "type": "STRING",
+      "value": "\""
+    },
+    "OPEN_BRACKET": {
+      "type": "STRING",
+      "value": "{"
+    },
+    "CLOSE_BRACKET": {
+      "type": "STRING",
+      "value": "}"
+    },
+    "THIN_ARROW": {
+      "type": "STRING",
+      "value": "->"
+    },
+    "COLON": {
+      "type": "STRING",
+      "value": ":"
+    },
+    "OPEN_DOC_COMMENT": {
+      "type": "STRING",
+      "value": "/*"
+    },
+    "CLOSE_DOC_COMMENT": {
+      "type": "STRING",
+      "value": "*/"
+    }
+  },
+  "extras": [
+    {
+      "type": "PATTERN",
+      "value": "\\s"
+    }
+  ],
+  "conflicts": [],
+  "precedences": [],
+  "externals": [],
+  "inline": [
+    "directives",
+    "directive",
+    "assign",
+    "of_type",
+    "union_type",
+    "intersection_type",
+    "atom_type",
+    "type_paren"
+  ],
+  "supertypes": []
+}

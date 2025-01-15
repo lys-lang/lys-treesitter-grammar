@@ -1,0 +1,35 @@
+{
+  "grammars": [
+    {
+      "name": "lys",
+      "camelcase": "Lys",
+      "scope": "source.lys",
+      "file-types": [
+        ".lys"
+      ],
+      "injection-regex": "^lys$"
+    }
+  ],
+  "metadata": {
+    "version": "0.0.1-2501151828",
+    "license": "BSD-3-Clause",
+    "description": "⚜︎ A language that compiles to WebAssembly",
+    "authors": [
+      {
+        "name": "Michał Schwarz",
+        "email": "mschwarz@blckcomp.com"
+      }
+    ],
+    "links": {
+      "repository": "https://github.com/lys-lang/tree-sitter-lys"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": true,
+    "node": true,
+    "python": true,
+    "rust": true,
+    "swift": true
+  }
+}

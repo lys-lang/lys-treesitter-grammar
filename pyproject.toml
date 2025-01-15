@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tree-sitter-lys"
+description = "⚜︎ A language that compiles to WebAssembly"
+version = "0.0.1-2501151828"
+keywords = ["incremental", "parsing", "tree-sitter", "lys"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Compilers",
+  "Topic :: Text Processing :: Linguistic",
+  "Typing :: Typed",
+]
+authors = [{ name = "Michał Schwarz", email = "mschwarz@blckcomp.com" }]
+requires-python = ">=3.9"
+license.text = "BSD-3-Clause"
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/lys-lang/tree-sitter-lys"
+
+[project.optional-dependencies]
+core = ["tree-sitter~=0.22"]
+
+[tool.cibuildwheel]
+build = "cp39-*"
+build-frontend = "build"
