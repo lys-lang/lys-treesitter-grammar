@@ -1,17 +1,148 @@
 [
   {
-    "type": "decorator",
+    "type": "apply_fun_expr",
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
-      "required": true,
+      "multiple": true,
+      "required": false,
       "types": [
         {
-          "type": "name_identifier",
+          "type": "ADD_OP",
+          "named": true
+        },
+        {
+          "type": "EQ_OP",
+          "named": true
+        },
+        {
+          "type": "MUL_OP",
+          "named": true
+        },
+        {
+          "type": "REL_OP",
+          "named": true
+        },
+        {
+          "type": "SHIFT_OP",
+          "named": true
+        },
+        {
+          "type": "apply_fun_expr",
+          "named": true
+        },
+        {
+          "type": "block_expr",
+          "named": true
+        },
+        {
+          "type": "literal",
+          "named": true
+        },
+        {
+          "type": "member_deref_expr",
+          "named": true
+        },
+        {
+          "type": "reference",
+          "named": true
+        },
+        {
+          "type": "subscript_expr",
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "block_expr",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "ADD_OP",
+          "named": true
+        },
+        {
+          "type": "EOL",
+          "named": true
+        },
+        {
+          "type": "EQ_OP",
+          "named": true
+        },
+        {
+          "type": "MUL_OP",
+          "named": true
+        },
+        {
+          "type": "REL_OP",
+          "named": true
+        },
+        {
+          "type": "SHIFT_OP",
+          "named": true
+        },
+        {
+          "type": "apply_fun_expr",
+          "named": true
+        },
+        {
+          "type": "block_expr",
+          "named": true
+        },
+        {
+          "type": "fun_declaration",
+          "named": true
+        },
+        {
+          "type": "literal",
+          "named": true
+        },
+        {
+          "type": "member_deref_expr",
+          "named": true
+        },
+        {
+          "type": "reference",
+          "named": true
+        },
+        {
+          "type": "subscript_expr",
+          "named": true
+        },
+        {
+          "type": "val_declaration",
+          "named": true
+        },
+        {
+          "type": "var_declaration",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "decorator",
+    "named": true,
+    "fields": {
+      "decorator": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "literal",
+            "named": true
+          },
+          {
+            "type": "name_identifier",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -77,7 +208,86 @@
   {
     "type": "effect_declaration",
     "named": true,
-    "fields": {}
+    "fields": {
+      "typevars": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "typevar",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "effect_member_declaration",
+          "named": true
+        },
+        {
+          "type": "name_identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "effect_member_declaration",
+    "named": true,
+    "fields": {
+      "signature": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "typed_name",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "function_effect",
+          "named": true
+        },
+        {
+          "type": "functiontype",
+          "named": true
+        },
+        {
+          "type": "name_identifier",
+          "named": true
+        },
+        {
+          "type": "namedtype",
+          "named": true
+        },
+        {
+          "type": "sumtype",
+          "named": true
+        },
+        {
+          "type": "uniontype",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "enum_declaration",
@@ -113,26 +323,8 @@
     "type": "fun_declaration",
     "named": true,
     "fields": {
-      "expr": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "expr",
-            "named": false
-          },
-          {
-            "type": "unknown_expression",
-            "named": true
-          },
-          {
-            "type": "wasm_expression",
-            "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
+      "fun": {
+        "multiple": true,
         "required": false,
         "types": [
           {
@@ -148,27 +340,83 @@
             "named": false
           },
           {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
             "type": "-",
             "named": false
           },
           {
-            "type": "[]",
+            "type": "=",
             "named": false
+          },
+          {
+            "type": "ADD_OP",
+            "named": true
+          },
+          {
+            "type": "EQ_OP",
+            "named": true
+          },
+          {
+            "type": "MUL_OP",
+            "named": true
+          },
+          {
+            "type": "REL_OP",
+            "named": true
+          },
+          {
+            "type": "SHIFT_OP",
+            "named": true
           },
           {
             "type": "^",
             "named": false
           },
           {
+            "type": "apply_fun_expr",
+            "named": true
+          },
+          {
             "type": "as",
             "named": false
+          },
+          {
+            "type": "block_expr",
+            "named": true
           },
           {
             "type": "is",
             "named": false
           },
           {
-            "type": "name_identifier",
+            "type": "literal",
+            "named": true
+          },
+          {
+            "type": "member_deref_expr",
+            "named": true
+          },
+          {
+            "type": "reference",
+            "named": true
+          },
+          {
+            "type": "subscript_expr",
+            "named": true
+          },
+          {
+            "type": "unknown_expression",
+            "named": true
+          },
+          {
+            "type": "wasm_expression",
             "named": true
           },
           {
@@ -182,6 +430,80 @@
           {
             "type": "~",
             "named": false
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "ADD_OP",
+            "named": true
+          },
+          {
+            "type": "AS_KEYWORD",
+            "named": true
+          },
+          {
+            "type": "B_AND_OP",
+            "named": true
+          },
+          {
+            "type": "B_NOT_PRE_OP",
+            "named": true
+          },
+          {
+            "type": "B_OR_OP",
+            "named": true
+          },
+          {
+            "type": "B_XOR_OP",
+            "named": true
+          },
+          {
+            "type": "EQ_OP",
+            "named": true
+          },
+          {
+            "type": "IS_KEYWORD",
+            "named": true
+          },
+          {
+            "type": "LOGIC_AND_OP",
+            "named": true
+          },
+          {
+            "type": "LOGIC_NOT_OP",
+            "named": true
+          },
+          {
+            "type": "LOGIC_OR_OP",
+            "named": true
+          },
+          {
+            "type": "MUL_OP",
+            "named": true
+          },
+          {
+            "type": "REL_OP",
+            "named": true
+          },
+          {
+            "type": "SHIFT_OP",
+            "named": true
+          },
+          {
+            "type": "UNARY_MINUS_OP",
+            "named": true
+          },
+          {
+            "type": "[]",
+            "named": false
+          },
+          {
+            "type": "name_identifier",
+            "named": true
           }
         ]
       },
@@ -281,25 +603,49 @@
     }
   },
   {
-    "type": "function_param_name",
+    "type": "functiontype",
     "named": true,
     "fields": {
       "param_name": {
-        "multiple": false,
-        "required": true,
+        "multiple": true,
+        "required": false,
         "types": [
           {
             "type": "name_identifier",
             "named": true
           }
         ]
-      }
-    }
-  },
-  {
-    "type": "functiontype",
-    "named": true,
-    "fields": {
+      },
+      "param_type": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "functiontype",
+            "named": true
+          },
+          {
+            "type": "namedtype",
+            "named": true
+          },
+          {
+            "type": "sumtype",
+            "named": true
+          },
+          {
+            "type": "uniontype",
+            "named": true
+          }
+        ]
+      },
       "params": {
         "multiple": true,
         "required": true,
@@ -313,7 +659,31 @@
             "named": false
           },
           {
-            "type": "funtype_sig_param",
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": ":",
+            "named": false
+          },
+          {
+            "type": "functiontype",
+            "named": true
+          },
+          {
+            "type": "name_identifier",
+            "named": true
+          },
+          {
+            "type": "namedtype",
+            "named": true
+          },
+          {
+            "type": "sumtype",
+            "named": true
+          },
+          {
+            "type": "uniontype",
             "named": true
           }
         ]
@@ -365,56 +735,10 @@
     }
   },
   {
-    "type": "funtype_sig_param",
-    "named": true,
-    "fields": {
-      "param_type": {
-        "multiple": true,
-        "required": true,
-        "types": [
-          {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
-            "type": "functiontype",
-            "named": true
-          },
-          {
-            "type": "namedtype",
-            "named": true
-          },
-          {
-            "type": "sumtype",
-            "named": true
-          },
-          {
-            "type": "uniontype",
-            "named": true
-          }
-        ]
-      }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "function_param_name",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "impl_block",
     "named": true,
     "fields": {
-      "impltype": {
+      "impl_type": {
         "multiple": false,
         "required": false,
         "types": [
@@ -424,7 +748,7 @@
           }
         ]
       },
-      "selftype": {
+      "self_type": {
         "multiple": false,
         "required": true,
         "types": [
@@ -481,6 +805,92 @@
     "type": "injected_literal",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "literal",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "boolean",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "member_deref_expr",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "ADD_OP",
+          "named": true
+        },
+        {
+          "type": "EQ_OP",
+          "named": true
+        },
+        {
+          "type": "MEMBER_OP",
+          "named": true
+        },
+        {
+          "type": "MUL_OP",
+          "named": true
+        },
+        {
+          "type": "REL_OP",
+          "named": true
+        },
+        {
+          "type": "SHIFT_OP",
+          "named": true
+        },
+        {
+          "type": "apply_fun_expr",
+          "named": true
+        },
+        {
+          "type": "block_expr",
+          "named": true
+        },
+        {
+          "type": "literal",
+          "named": true
+        },
+        {
+          "type": "member_deref_expr",
+          "named": true
+        },
+        {
+          "type": "name_identifier",
+          "named": true
+        },
+        {
+          "type": "reference",
+          "named": true
+        },
+        {
+          "type": "subscript_expr",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "name_literal_pair",
@@ -551,6 +961,21 @@
           "type": "name_identifier",
           "named": true
         },
+        {
+          "type": "qname",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "reference",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
         {
           "type": "qname",
           "named": true
@@ -634,6 +1059,61 @@
     }
   },
   {
+    "type": "subscript_expr",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "ADD_OP",
+          "named": true
+        },
+        {
+          "type": "EQ_OP",
+          "named": true
+        },
+        {
+          "type": "MUL_OP",
+          "named": true
+        },
+        {
+          "type": "REL_OP",
+          "named": true
+        },
+        {
+          "type": "SHIFT_OP",
+          "named": true
+        },
+        {
+          "type": "apply_fun_expr",
+          "named": true
+        },
+        {
+          "type": "block_expr",
+          "named": true
+        },
+        {
+          "type": "literal",
+          "named": true
+        },
+        {
+          "type": "member_deref_expr",
+          "named": true
+        },
+        {
+          "type": "reference",
+          "named": true
+        },
+        {
+          "type": "subscript_expr",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "sumtype",
     "named": true,
     "fields": {},
@@ -664,6 +1144,16 @@
     "type": "trait_declaration",
     "named": true,
     "fields": {
+      "methods": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "fun_declaration",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
@@ -680,7 +1170,7 @@
     "type": "type_declaration",
     "named": true,
     "fields": {
-      "type": {
+      "decl": {
         "multiple": true,
         "required": true,
         "types": [
@@ -722,7 +1212,7 @@
           }
         ]
       },
-      "typename": {
+      "name": {
         "multiple": false,
         "required": true,
         "types": [
@@ -820,16 +1310,108 @@
     "named": true,
     "fields": {
       "expr": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
-            "type": "expr",
+            "type": "!",
             "named": false
+          },
+          {
+            "type": "&",
+            "named": false
+          },
+          {
+            "type": "&&",
+            "named": false
+          },
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "-",
+            "named": false
+          },
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "ADD_OP",
+            "named": true
+          },
+          {
+            "type": "EQ_OP",
+            "named": true
+          },
+          {
+            "type": "MUL_OP",
+            "named": true
+          },
+          {
+            "type": "REL_OP",
+            "named": true
+          },
+          {
+            "type": "SHIFT_OP",
+            "named": true
+          },
+          {
+            "type": "^",
+            "named": false
+          },
+          {
+            "type": "apply_fun_expr",
+            "named": true
+          },
+          {
+            "type": "as",
+            "named": false
+          },
+          {
+            "type": "block_expr",
+            "named": true
+          },
+          {
+            "type": "is",
+            "named": false
+          },
+          {
+            "type": "literal",
+            "named": true
+          },
+          {
+            "type": "member_deref_expr",
+            "named": true
+          },
+          {
+            "type": "reference",
+            "named": true
+          },
+          {
+            "type": "subscript_expr",
+            "named": true
           },
           {
             "type": "unknown_expression",
             "named": true
+          },
+          {
+            "type": "|",
+            "named": false
+          },
+          {
+            "type": "||",
+            "named": false
+          },
+          {
+            "type": "~",
+            "named": false
           }
         ]
       },
@@ -888,16 +1470,108 @@
     "named": true,
     "fields": {
       "expr": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
-            "type": "expr",
+            "type": "!",
             "named": false
+          },
+          {
+            "type": "&",
+            "named": false
+          },
+          {
+            "type": "&&",
+            "named": false
+          },
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": "-",
+            "named": false
+          },
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "ADD_OP",
+            "named": true
+          },
+          {
+            "type": "EQ_OP",
+            "named": true
+          },
+          {
+            "type": "MUL_OP",
+            "named": true
+          },
+          {
+            "type": "REL_OP",
+            "named": true
+          },
+          {
+            "type": "SHIFT_OP",
+            "named": true
+          },
+          {
+            "type": "^",
+            "named": false
+          },
+          {
+            "type": "apply_fun_expr",
+            "named": true
+          },
+          {
+            "type": "as",
+            "named": false
+          },
+          {
+            "type": "block_expr",
+            "named": true
+          },
+          {
+            "type": "is",
+            "named": false
+          },
+          {
+            "type": "literal",
+            "named": true
+          },
+          {
+            "type": "member_deref_expr",
+            "named": true
+          },
+          {
+            "type": "reference",
+            "named": true
+          },
+          {
+            "type": "subscript_expr",
+            "named": true
           },
           {
             "type": "unknown_expression",
             "named": true
+          },
+          {
+            "type": "|",
+            "named": false
+          },
+          {
+            "type": "||",
+            "named": false
+          },
+          {
+            "type": "~",
+            "named": false
           }
         ]
       },
@@ -1020,6 +1694,78 @@
     "named": false
   },
   {
+    "type": "ADD_OP",
+    "named": true
+  },
+  {
+    "type": "AS_KEYWORD",
+    "named": true
+  },
+  {
+    "type": "B_AND_OP",
+    "named": true
+  },
+  {
+    "type": "B_NOT_PRE_OP",
+    "named": true
+  },
+  {
+    "type": "B_OR_OP",
+    "named": true
+  },
+  {
+    "type": "B_XOR_OP",
+    "named": true
+  },
+  {
+    "type": "EOL",
+    "named": true
+  },
+  {
+    "type": "EQ_OP",
+    "named": true
+  },
+  {
+    "type": "IS_KEYWORD",
+    "named": true
+  },
+  {
+    "type": "LOGIC_AND_OP",
+    "named": true
+  },
+  {
+    "type": "LOGIC_NOT_OP",
+    "named": true
+  },
+  {
+    "type": "LOGIC_OR_OP",
+    "named": true
+  },
+  {
+    "type": "MEMBER_OP",
+    "named": true
+  },
+  {
+    "type": "MUL_OP",
+    "named": true
+  },
+  {
+    "type": "REL_OP",
+    "named": true
+  },
+  {
+    "type": "SHIFT_OP",
+    "named": true
+  },
+  {
+    "type": "UNARY_MINUS_OP",
+    "named": true
+  },
+  {
+    "type": "[",
+    "named": false
+  },
+  {
     "type": "[]",
     "named": false
   },
@@ -1032,12 +1778,12 @@
     "named": false
   },
   {
-    "type": "___decorator->lit___",
+    "type": "as",
     "named": false
   },
   {
-    "type": "as",
-    "named": false
+    "type": "boolean",
+    "named": true
   },
   {
     "type": "effect",
@@ -1045,10 +1791,6 @@
   },
   {
     "type": "enum",
-    "named": false
-  },
-  {
-    "type": "expr",
     "named": false
   },
   {
@@ -1072,16 +1814,20 @@
     "named": false
   },
   {
-    "type": "literal",
+    "type": "name_identifier",
     "named": true
   },
   {
-    "type": "name_identifier",
+    "type": "number",
     "named": true
   },
   {
     "type": "private",
     "named": false
+  },
+  {
+    "type": "string",
+    "named": true
   },
   {
     "type": "struct",

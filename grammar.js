@@ -7,6 +7,52 @@
 /// <reference types="tree-sitter-cli/dsl" />
 // @ts-check
 
+const kNameIdentifier = /\$?[A-Za-z_][A-Za-z0-9_$]*/;
+
+const [kDecimalNumberLiteral, kHexadecimalIntLiteral] = [
+    /0x[a-f0-9]+/,
+
+    // [+-]?(
+    //       \d
+    //     | [1-9]\d+
+    //     | (0|[1-9]\d*)\.[0-9]*
+    //     | \.[0-9]+
+    // )(
+    //     [eE][+-]?[1-9]\d*
+    // )?
+    /[+-]?(\d|[1-9]\d+|(0|[1-9]\d*)\.[0-9]*|\.[0-9]+)([eE][+-]?[1-9]\d*)?/,
+];
+const [kTrueBoolLiteral, kFalseBoolLiteral]  = [/true/, /false/];
+const kStringLiteral = /"[^"]*"/iu;
+
+/** @returns {RuleOrLiteral} */
+function numeric_literal() {
+    return token(choice(kHexadecimalIntLiteral, kDecimalNumberLiteral));
+}
+
+/** @returns {RuleOrLiteral} */
+function boolean_literal() {
+    return token(choice(alias(kTrueBoolLiteral, 'true'), alias(kFalseBoolLiteral, 'false')));
+}
+
+/** @returns {RuleOrLiteral} */
+function string_literal() {
+    return kStringLiteral;
+}
+
+/**
+ * @param {GrammarSymbols<"reference">} $
+ *
+ * @returns {Rule}
+ */
+function postfixnum_literal($) {
+    return token(
+        prec(900,
+            seq(numeric_literal(), alias(kNameIdentifier, $.reference)),
+        ),
+    );
+}
+
 module.exports = grammar({
     name: "lys",
 
@@ -31,6 +77,9 @@ module.exports = grammar({
             prec( 2, $._import_directive),
         ),
 
+        /* -------------------------------------------------------------------------------------- */
+        /* ---------------------------------- Basic Statements ---------------------------------- */
+        /* -------------------------------------------------------------------------------------- */
         _function_directive: $ => seq(optional($._decorators), optional($.private_modifier), $.fun_declaration),
         _val_directive:      $ => seq(optional($.private_modifier), $.val_declaration),
         _var_directive:      $ => seq(optional($.private_modifier), $.var_declaration),
@@ -51,16 +100,21 @@ module.exports = grammar({
         _decorators: $ => repeat1($.decorator),
         decorator: $ => seq(
             alias($.OPEN_DECORATION, '#['),
-            $.name_identifier, repeat('___decorator->lit___'),
+            field("decorator", seq($.name_identifier, repeat($.literal))),
             alias($.CLOSE_ARRAY, ']'),
         ),
 
         private_modifier: $ => field("vis", alias($.PRIVATE_KEYWORD, 'private')),
+        loop_expression:  $ => seq(alias($.LOOP_KEYWORD, 'loop'), $._expression),
+        continue_statement: $ => seq(alias($.CONTINUE_KEYWORD, 'continue')),
+        break_statement:    $ => seq(alias($.BREAK_KEYWORD, 'break')),
+        match_expression:   $ => seq(alias($.MATCH_KEYWORD, 'match')),
+
 
         fun_declaration: $ => seq(
             alias($.FUN_KEYWORD, 'fun'), field("name", $._function_name),
             optional($._type_variables), $._function_signature_params,
-            prec(100, optional(field("return_type", $.of_type))),
+            optional(field("return_type", $.of_type)),
             optional($._fun_assign_expression),
         ),
         val_declaration: $ => seq(
@@ -78,7 +132,7 @@ module.exports = grammar({
         ),
         type_declaration: $ => seq(
             alias($.TYPE_KEYWORD, 'type'),
-            field("typename", $.name_identifier),
+            field("name", $.name_identifier),
             prec.right($._type_assign),
         ),
         enum_declaration: $ => seq(
@@ -89,6 +143,7 @@ module.exports = grammar({
         trait_declaration: $ => seq(
             alias($.TRAIT_KEYWORD, 'trait'),
             field("name", $.name_identifier),
+            $._trait_methods_decl,
         ),
         import_declaration: $ => seq(
             alias($.IMPORT_KEYWORD, 'import'),
@@ -97,15 +152,16 @@ module.exports = grammar({
         ),
         effect_declaration: $ => seq(
             alias($.EFFECT_KEYWORD, 'effect'),
+            $.name_identifier, optional($._type_variables), $._effect_element_list
         ),
         impl_block: $ => seq(
             alias($.IMPL_KEYWORD, 'impl'),
             choice(
-                field("selftype", alias($.namedtype, $.selftype)),
+                field("self_type", alias($.namedtype, $.selftype)),
                 seq(
-                    field("impltype", alias($.namedtype, $.impltype)),
+                    field("impl_type", alias($.namedtype, $.impltype)),
                     alias($.FOR_KEYWORD, 'for'),
-                    field("selftype", alias($.namedtype, $.selftype)),
+                    field("self_type", alias($.namedtype, $.selftype)),
                 ),
             ),
         ),
@@ -116,6 +172,9 @@ module.exports = grammar({
         unknown_expression: _ => '???',
         wasm_expression:    _ => '___wasm expression___',
 
+        /* -------------------------------------------------------------------------------------- */
+        /* --------------------------------- Type Declarations ---------------------------------- */
+        /* -------------------------------------------------------------------------------------- */
         struct_literal: $ => seq(
             alias($.STRUCT_LITERAL_KEYWORD, '%struct'),
             alias($.OPEN_BRACKET, '{'),
@@ -132,7 +191,7 @@ module.exports = grammar({
         typevar: _ => /[A-Z][A-Za-z0-9_]*/,
         _type_variables: $ => seq(
             alias($.OPEN_TYPEVARS, '<'),
-            field("typevars", repeat($._typevars_list_item)),
+            repeat(field("typevars", $._typevars_list_item)),
             alias($.CLOSE_TYPEVARS, '>'),
         ),
         _typevars_list_item: $ => seq($.typevar, optional(',')),
@@ -147,7 +206,7 @@ module.exports = grammar({
                 ),
             )),
         _type_assign: $ => seq(alias($.ASSIGN_OP, '='),
-            field("type",
+            field("decl",
                 choice(
                     $._type,
                     $.struct_literal,
@@ -156,13 +215,20 @@ module.exports = grammar({
                 )),
             ),
         _fun_assign_expression: $ => seq(alias($.ASSIGN_OP, '='),
-            field("expr",
+            field("fun",
                 choice(
                     $._expression,
                     $.wasm_expression,
                     $.unknown_expression,
                 ),
             )),
+
+        _value: $ => choice(
+            prec(100, $.literal),
+            prec(100, $.reference),
+            prec(101, $.block_expr),
+            prec(102, $._grouped_expr),
+        ),
 
         _struct_members_decl: $ => seq(
             alias($.OPEN_PAREN, '('),
@@ -172,6 +238,11 @@ module.exports = grammar({
         _enum_variants_decl: $ => seq(
             alias($.OPEN_BRACKET, '{'),
             optional(field("variants", $._typed_names_list)),
+            alias($.CLOSE_BRACKET, '}'),
+        ),
+        _trait_methods_decl: $ => seq(
+            alias($.OPEN_BRACKET, '{'),
+            optional(field("methods", $._trait_decl_elements)),
             alias($.CLOSE_BRACKET, '}'),
         ),
         _stack_namepair_list: $ => seq(
@@ -184,6 +255,10 @@ module.exports = grammar({
             optional(field("signature", $._typed_names_list)),
             alias($.CLOSE_PAREN, ')'),
         ),
+
+        effect_member_declaration: $ => seq($.name_identifier, $._function_signature_params, $.of_type),
+        _trait_decl_elements: $ => repeat1($.fun_declaration),
+        _effect_elements:     $ => repeat1($.effect_member_declaration),
 
         _stack_namepairs: $ => repeat1($.name_literal_pair),
 
@@ -199,6 +274,8 @@ module.exports = grammar({
             $.LOGIC_AND_OP, $.LOGIC_OR_OP, $.LOGIC_NOT_OP,
             '[]',
         ),
+
+        _effect_element_list: $ => seq(alias($.OPEN_BRACKET, '{'), optional($._effect_elements), alias($.CLOSE_BRACKET, '}')),
 
         function_effect: $ => seq(
             alias($.OPEN_TYPEVARS, '<'),
@@ -222,17 +299,6 @@ module.exports = grammar({
         _grouped_type: $ => prec.left(3,
             seq(alias($.OPEN_PAREN, '('), $._type, alias($.CLOSE_PAREN, ')')),
         ),
-        union_type: $ => prec.left(
-            seq($.intersect_type, repeat(seq(alias($.B_OR_OP, '|'), $.intersect_type))),
-        ),
-        intersect_type: $ => prec.left(
-            seq($._atom_type, repeat(seq(alias($.B_AND_OP, '&'), $._atom_type))),
-        ),
-        _atom_type:     $ => choice($._type_paren, $.functiontype, $.namedtype),
-        _type_paren:    $ => seq(alias($.OPEN_PAREN, '('), $._type, alias($.CLOSE_PAREN, ')')),
-
-        // XXX: chuck this in the bin if we can do without the `prec.right(...)`
-        //_atom_type:     $ => choice($._type_paren, prec.right(100, $.functiontype), $.namedtype),
 
         functiontype: $ => seq(
             alias($.FUN_KEYWORD, 'fun'), optional($._type_variables),
@@ -248,34 +314,117 @@ module.exports = grammar({
         ),
         function_param_name: $ => seq(field("param_name", $.name_identifier), alias($.COLON, ':')),
 
-        _expression: _ => 'expr',
+        /* -------------------------------------------------------------------------------------- */
+        /* ------------------------------------- Expressions ------------------------------------ */
+        /* -------------------------------------------------------------------------------------- */
+        _expression: $ => choice(
+            $._value_expr,
+        ),
+        _statement: $ => choice(
+            $.val_declaration,
+            $.var_declaration,
+            $.fun_declaration,
+            $._expression,
+        ),
+
+        // Precedence in accordance [with Java](https://introcs.cs.princeton.edu/java/11precedence)
+        _value_expr: $ => choice(
+            prec.left(15, $._atomic_expression),
+            prec.left(14, $._unary_expression),
+            prec.left(13, $._cast_expression),
+            prec.left(12, seq($._expression, $.MUL_OP,   $._expression)),
+            prec.left(11, seq($._expression, $.ADD_OP,   $._expression)),
+            prec.left(10, seq($._expression, $.SHIFT_OP, $._expression)),
+            prec.left( 9, seq($._expression, $.REL_OP,   $._expression)),
+            prec.left( 8, seq($._expression, $.EQ_OP,    $._expression)),
+            prec.left( 7, seq($._expression, alias($.B_AND_OP, '&'), $._expression)),
+            prec.left( 6, seq($._expression, alias($.B_XOR_OP, '^'), $._expression)),
+            prec.left( 5, seq($._expression, alias($.B_OR_OP, '|'),  $._expression)),
+            prec.left( 4, seq($._expression, alias($.LOGIC_AND_OP, '&&'), $._expression)),
+            prec.left( 3, seq($._expression, alias($.LOGIC_OR_OP, '||'),  $._expression)),
+            prec.right(1, seq($._expression, alias($.ASSIGN_OP, '='), $._expression))
+        ),
+
+        _unary_expression: $ => choice(
+            prec.left(seq(alias($.LOGIC_NOT_OP, '!'),   $._expression)),
+            prec.left(seq(alias($.B_NOT_PRE_OP, '~'),   $._expression)),
+            prec.left(seq(alias($.UNARY_MINUS_OP, '-'), $._expression)),
+        ),
+        _cast_expression: $ => choice(
+            prec.left(seq($._expression, alias($.AS_KEYWORD, 'as'), $._expression)),
+            prec.left(seq($._expression, alias($.IS_KEYWORD, 'is'), $._expression)),
+        ),
+        _atomic_expression: $ => choice(
+            prec(53, $.subscript_expr),
+            prec(52, $.apply_fun_expr),
+            prec(51, $.member_deref_expr),
+            prec(50, $._value),
+        ),
+
+        subscript_expr:    $ => prec.left(seq($._value, repeat1($._index_deref_expr))),
+        apply_fun_expr:    $ => prec.left(seq($._value, repeat1($._call_args_expr))),
+        member_deref_expr: $ => prec.left(seq($._value, repeat1($._member_deref_expr))),
+
+        _member_deref_expr: $ => seq($.MEMBER_OP, $.name_identifier),
+        _index_deref_expr:  $ => seq(alias($.OPEN_ARRAY, '['), $._expression, alias($.CLOSE_ARRAY, ']')),
+        _call_args_expr:    $ => seq($._call_args),
+
+        _call_args: $ => seq(
+            alias($.OPEN_PAREN, '('),
+            repeat(seq($._expression, optional(','))),
+            alias($.CLOSE_PAREN, ')'),
+        ),
+
+        _grouped_expr: $ => seq(
+            alias($.OPEN_PAREN, '('),
+            $._expression,
+            alias($.CLOSE_PAREN, ')'),
+        ),
+        block_expr: $ => seq(
+            alias($.OPEN_BRACKET, '{'),
+            optional(
+                seq($._statement, optional(seq(repeat1($.EOL), $._statement)), optional($.EOL)),
+            ),
+            alias($.CLOSE_BRACKET, '}'),
+        ),
 
         namedtype: $ => prec.left($.qname),
+        reference: $ => prec.left($.qname),
 
-        literal: _ => '___literal___',
+        literal: $ => choice(
+            alias(numeric_literal(), $.number),
+            alias(boolean_literal(), $.boolean),
+            alias(string_literal(), $.string),
+            //alias(postfixnum_literal($), $.postfix_number),
+        ),
 
-        name_identifier: _ => /\$?[A-Za-z_][A-Za-z0-9_$]*/,
+        // string_literal:   _ => kStringLiteral,
+        // _hexadec_literal: _ => kHexadecimalIntLiteral,
+        // _decimal_literal: _ => kDecimalNumberLiteral,
+
+        // numeric_literal: _ => token(choice(kHexadecimalIntLiteral, kDecimalNumberLiteral)),
+        // postfixnum_literal: $ => postfixnum_literal($),
+
+        // bool_literal: _ => token(boolean_literal()),
+
+        name_identifier: _ => kNameIdentifier,
         qname: $ => choice(
-            // $._namespaced_qname,
             prec.right(1, seq($.qname, alias($.NAMESPACE_SEP, '::'), $.qname)),
             prec(2, $.name_identifier),
         ),
 
         _namespaced_qname: $ => prec.right(1, seq($.qname, alias($.NAMESPACE_SEP, '::'), $.qname)),
 
-        // qname: $ => seq($.name_identifier, repeat(seq(alias($.NAMESPACE_SEP, '::'), $.name_identifier))),
-        // qname: $ => seq($.name_identifier, prec.left(repeat(seq(alias($.NAMESPACE_SEP, '::'), $.name_identifier)))),
-
         name_literal_pair: $ => seq(
             field("name", $.name_identifier),
             alias($.ASSIGN_OP, '='),
             field("value", $.literal),
+            optional(','),
         ),
 
         /* -------------------------------------------------------------------------------------- */
-        /* ------------------------------------ Nonterminals ------------------------------------ */
+        /* -------------------------------- Nonterminals/Keywords ------------------------------- */
         /* -------------------------------------------------------------------------------------- */
-
         WASM_KEYWORD:             _ => '%wasm',
         STRUCT_LITERAL_KEYWORD:   _ => '%struct',
         STACK_LITERAL_KEYWORD:    _ => '%stack',
@@ -298,11 +447,11 @@ module.exports = grammar({
         LOOP_KEYWORD:     _ => 'loop',
         CONTINUE_KEYWORD: _ => 'continue',
         BREAK_KEYWORD:    _ => 'break',
-        TRUE_KEYWORD:     _ => 'true',
-        FALSE_KEYWORD:    _ => 'false',
         IF_KEYWORD:       _ => 'if',
         ELSE_KEYWORD:     _ => 'else',
         MATCH_KEYWORD:    _ => 'match',
+        TRUE_KEYWORD:     _ => kTrueBoolLiteral,
+        FALSE_KEYWORD:    _ => kFalseBoolLiteral,
 
         RESERVED_WORDS: _ => token(choice(
             'async', 'await', 'yield',
@@ -328,24 +477,23 @@ module.exports = grammar({
         /* -------------------------------------------------------------------------------------- */
         /* ---------------------------------- Operator Tokens ----------------------------------- */
         /* -------------------------------------------------------------------------------------- */
-
-        // Precedence in accordance [with Java](https://introcs.cs.princeton.edu/java/11precedence)
-        LOGIC_NOT_OP:   _ => prec(14, '!'),
-        B_NOT_PRE_OP:   _ => prec(14, '~'),
-        UNARY_MINUS_OP: _ => prec(14, '-'),
-        AS_KEYWORD:     _ => prec(13, 'as'),
-        IS_KEYWORD:     _ => prec(13, 'is'),
-        MUL_OP:         _ => prec(12, token(choice('**', '*', '/', '%'))),
-        ADD_OP:         _ => prec(11, token(choice('++', '+', '-'))),
-        SHIFT_OP:       _ => prec(10, token(choice('>>>', '>>', '<<'))),
-        REL_OP:         _ => prec( 9, token(choice('>=', '<=', '>', '<'))),
-        EQ_OP:          _ => prec( 8, token(choice('===', '!==', '~=', '==', '!='))),
-        B_AND_OP:       _ => prec( 7, '&'),
-        B_XOR_OP:       _ => prec( 6, '^'),
-        B_OR_OP:        _ => prec( 5, '|'),
-        LOGIC_AND_OP:   _ => prec( 4, '&&'),
-        LOGIC_OR_OP:    _ => prec( 3, '||'),
-        ASSIGN_OP:      _ => prec( 1, '='),
+        LOGIC_NOT_OP:   _ => '!',
+        B_NOT_PRE_OP:   _ => '~',
+        UNARY_MINUS_OP: _ => '-',
+        AS_KEYWORD:     _ => 'as',
+        IS_KEYWORD:     _ => 'is',
+        MUL_OP:         _ => token(choice('**', '*', '/', '%')),
+        ADD_OP:         _ => token(choice('++', '+', '-')),
+        SHIFT_OP:       _ => token(choice('>>>', '>>', '<<')),
+        REL_OP:         _ => token(choice('>=', '<=', '>', '<')),
+        EQ_OP:          _ => token(choice('===', '!==', '~=', '==', '!=')),
+        B_AND_OP:       _ => '&',
+        B_XOR_OP:       _ => '^',
+        B_OR_OP:        _ => '|',
+        LOGIC_AND_OP:   _ => '&&',
+        LOGIC_OR_OP:    _ => '||',
+        MEMBER_OP:      _ => token(choice('.^', '.')),
+        ASSIGN_OP:      _ => '=',
 
         /* -------------------------------------------------------------------------------------- */
         /* ------------------------------------- Punctuation ------------------------------------ */
@@ -392,27 +540,27 @@ module.exports = grammar({
         $._decorators,
         $._import_alias,
 
+        $._type_variables,
         $._typevars_list_item,
 
-        $._assign, $.of_type,
+        $._assign, $._fun_assign_expression,
+        $.of_type,
         $._grouped_type,
-        $.union_type, $.intersect_type,
-        $._atom_type, $._type_paren,
-        // $._type,
 
-        $._funtype_sig_params_list, //$.funtype_sig_param,
+        $._value,
+        $._funtype_sig_params_list, $.funtype_sig_param, $.function_param_name,
         $._typed_names_list,
         $._struct_members_decl, $._stack_namepair_list, $._function_signature_params,
         $._stack_namepairs,
+        $._trait_decl_elements, $._effect_elements, $._effect_element_list,
 
         $._namespaced_qname,
 
-        $.B_NOT_PRE_OP, $.UNARY_MINUS_OP,
-        $.AS_KEYWORD, $.IS_KEYWORD,
-        $.MUL_OP, $.ADD_OP, $.SHIFT_OP, $.REL_OP, $.EQ_OP,
-        $.B_AND_OP, $.B_XOR_OP, $.B_OR_OP,
-        $.LOGIC_AND_OP, $.LOGIC_OR_OP, $.LOGIC_NOT_OP,
-        $.ASSIGN_OP,
+        $._statement,
+        $._atomic_expression,
+        $._cast_expression, $._unary_expression,
+        $._member_deref_expr, $._index_deref_expr, $._call_args_expr,
+        $._grouped_expr,
     ],
 });
 
