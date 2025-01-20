@@ -3,11 +3,13 @@
     {
       "name": "lys",
       "camelcase": "Lys",
+      "path": ".",
       "scope": "source.lys",
       "file-types": [
-        ".lys"
+        "lys"
       ],
-      "injection-regex": "^lys$"
+      "injection-regex": "lys",
+      "highlights": "queries/highlights.scm"
     }
   ],
   "metadata": {
