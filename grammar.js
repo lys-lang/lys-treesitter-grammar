@@ -60,12 +60,12 @@ module.exports = grammar({
 
     word: $ => $.word,
 
-    extras: $ => [
+    //extras: $ => [
         // "\r", "\n", /[ \t]+/,
-        /\s+/,
-        $.LINE_COMMENT,
-        $.DOC_COMMENT,
-    ],
+    //    /[\s\n]+/,
+    //    $.LINE_COMMENT,
+    //    $.DOC_COMMENT,
+    //],
 
     rules: {
         document: $ => $._directives,
@@ -223,8 +223,12 @@ module.exports = grammar({
 
             /* --------------------------------- CaseIs --------------------------------- */
             seq(
-                field("value", optional($.name_identifier)),
-                alias($.IS_KEYWORD, 'is'), field("typename", alias($.reference, $.type_ref)),
+                field("alias", optional($.name_identifier)),
+                alias($.IS_KEYWORD, 'is'),
+                field("pattern", $.match_pattern),
+                optional(
+                    seq($.THIN_ARROW, field("expr", $._expression)),
+                ),
                 // alias($.EOL, '\\n'),
             ),
         ),
@@ -236,7 +240,7 @@ module.exports = grammar({
         ),
         _match_expr_body: $ => prec.left(
             seq(
-                field("match", alias($._expression, $.match_expr)),
+                field("match", optional(alias($._expression, $.match_expr))),
                 alias($.OPEN_BRACKET, '{'),
                 repeat1($._match_body_elem),
                 alias($.CLOSE_BRACKET, '}'),
@@ -256,6 +260,20 @@ module.exports = grammar({
         _match_body_elem: $ => choice(
             seq(alias($.CASE_KEYWORD, 'case'), $._case_expr_body),
             seq(alias($.ELSE_KEYWORD, 'else'), $._case_else_body),
+        ),
+
+        match_pattern: $ => seq(
+            field("constructor", $.reference),
+            field("fields", optional(
+                seq(alias($.OPEN_PAREN, '('), repeat($._match_pattern_fields), alias($.CLOSE_PAREN, ')')),
+            )),
+        ),
+        _match_pattern_fields: $ => seq(
+            alias($.name_identifier, $.field_name),
+            optional(
+                seq(alias($.COLON, ':'), $.name_identifier),
+            ),
+            optional(','),
         ),
 
         /* -------------------------------------------------------------------------------------- */
@@ -608,7 +626,7 @@ module.exports = grammar({
         LINE_COMMENT: $ => alias(seq("//", /.+/, alias($.EOL, '\\n')), $.LINE_COMMENT),
         DOC_COMMENT: $ => alias(seq(
             $.OPEN_DOC_COMMENT,
-            /.*/,
+            choice(/.+/, '\n'),
             $.CLOSE_DOC_COMMENT,
         ), $.DOC_COMMENT),
 

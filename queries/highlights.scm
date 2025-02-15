@@ -41,7 +41,7 @@
 (string)	@string
 (boolean)	@constant.builtin
 
-(LINE_COMMENT)	@comment
+;(LINE_COMMENT)	@comment
 
 (decorator)	@tag
 
@@ -93,3 +93,5 @@
   (name_literal_pair [
     name: (name_identifier) @property
   ]))
+
+; vim:ts=8 sw=2 noet
