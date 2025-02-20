@@ -9,8 +9,8 @@
 
 const kNameIdentifier = /\$?[A-Za-z_][A-Za-z0-9_$]*/;
 
-const [kDecimalNumberLiteral, kHexadecimalIntLiteral] = [
-    /0x[a-f0-9]+/,
+const [kHexadecimalIntLiteral, kDecimalNumberLiteral] = [
+    /0x[a-f0-9]+/i,
 
     // [+-]?(
     //       \d
@@ -20,7 +20,7 @@ const [kDecimalNumberLiteral, kHexadecimalIntLiteral] = [
     // )(
     //     [eE][+-]?[1-9]\d*
     // )?
-    /[+-]?(\d|[1-9]\d+|(0|[1-9]\d*)\.[0-9]*|\.[0-9]+)([eE][+-]?[1-9]\d*)?/,
+    /[+-]?(\d|[1-9]\d+|(0|[1-9]\d*)\.[0-9]*|\.[0-9]+)(e[+-]?[1-9]\d*)?/i,
 ];
 const [kTrueBoolLiteral, kFalseBoolLiteral]  = [/true/, /false/];
 const kStringLiteral = /"[^"]*"/iu;
@@ -40,37 +40,20 @@ function string_literal() {
     return kStringLiteral;
 }
 
-/**
- * @param {GrammarSymbols<"reference">} $
- *
- * @returns {Rule}
- */
-function postfixnum_literal($) {
-    return token(
-        prec(900,
-            seq(numeric_literal(), token.immediate(alias(kNameIdentifier, $.suffix))),
-        ),
-    );
-}
-
 module.exports = grammar({
     name: "lys",
 
-    // conflicts: $ => [ [$._if_expr_body, $._value_expr] ],
-
     word: $ => $.word,
+    externals: $ => [$.newline, $.line_comment, $.block_comment, $._err_sentinel],
 
-    //extras: $ => [
-        // "\r", "\n", /[ \t]+/,
-    //    /[\s\n]+/,
-    //    $.LINE_COMMENT,
-    //    $.DOC_COMMENT,
-    //],
+    extras: $ => [
+        /[ \t]/, $.newline,
+    ],
 
     rules: {
         document: $ => $._directives,
 
-        _directives: $ => repeat1($.directive),
+        _directives: $ => repeat1(choice($.directive, $.line_comment, $.block_comment)),
         directive: $ => choice(
             prec(10, $._val_directive),
             prec(10, $._var_directive),
@@ -78,10 +61,10 @@ module.exports = grammar({
             prec( 8, $._function_directive),
             prec( 7, $._struct_directive),
             prec( 6, $._enum_directive),
-            prec( 5, $._trait_directive),
-            prec( 4, $._effect_directive),
-            prec( 3, $._impl_directive),
-            prec( 2, $._import_directive),
+            prec( 5, $._impl_directive),
+            prec( 4, $._import_directive),
+            // prec( 5, $._trait_directive),
+            // prec( 4, $._effect_directive),
         ),
 
         /* -------------------------------------------------------------------------------------- */
@@ -93,10 +76,10 @@ module.exports = grammar({
         _struct_directive:   $ => seq(optional($.private_modifier), $.struct_declaration),
         _type_directive:     $ => seq(optional($.private_modifier), $.type_declaration),
         _enum_directive:     $ => seq(optional($.private_modifier), $.enum_declaration),
-        _trait_directive:    $ => seq(optional($.private_modifier), $.trait_declaration),
-        _import_directive:   $ => seq($.import_declaration),
-        _effect_directive:   $ => seq(optional($.private_modifier), $.effect_declaration),
         _impl_directive:     $ => seq(optional($.private_modifier), $.impl_block),
+        _import_directive:   $ => seq($.import_declaration),
+        // _trait_directive:    $ => seq(optional($.private_modifier), $.trait_declaration),
+        // _effect_directive:   $ => seq(optional($.private_modifier), $.effect_declaration),
 
         _impl_inner_directive: $ => choice(
             $._function_directive,
@@ -104,14 +87,15 @@ module.exports = grammar({
             $._var_directive,
         ),
 
-        _decorators: $ => repeat1($.decorator),
         decorator: $ => seq(
             alias($.OPEN_DECORATION, '#['),
             field("decoration", seq($.name_identifier, repeat($.literal))),
             alias($.CLOSE_ARRAY, ']'),
         ),
-
         private_modifier: $ => field("vis", alias($.PRIVATE_KEYWORD, 'private')),
+
+        _decorators: $ => repeat1($.decorator),
+
         loop_expression:      $ => seq(alias($.LOOP_KEYWORD, 'loop'), prec.right(field("expr", $._expression))),
         continue_statement:   $ => seq(alias($.CONTINUE_KEYWORD, 'continue')),
         break_statement:      $ => seq(alias($.BREAK_KEYWORD, 'break')),
@@ -127,7 +111,8 @@ module.exports = grammar({
 
         fun_declaration: $ => seq(
             alias($.FUN_KEYWORD, 'fun'), field("name", $._function_name),
-            field("typevars", optional($.type_variables)), $._function_signature_params,
+            // field("typevars", optional($.type_variables)),
+            $._function_signature_params,
             optional(field("return_type", $.of_type)),
             optional($._fun_assign_expression),
         ),
@@ -154,21 +139,6 @@ module.exports = grammar({
             field("name", $.name_identifier),
             $._enum_variants_decl,
         ),
-        trait_declaration: $ => seq(
-            alias($.TRAIT_KEYWORD, 'trait'),
-            field("name", $.name_identifier),
-            $._trait_methods_decl,
-        ),
-        import_declaration: $ => seq(
-            alias($.IMPORT_KEYWORD, 'import'),
-            field("path", $.qname),
-            optional($._import_alias),
-        ),
-        effect_declaration: $ => seq(
-            alias($.EFFECT_KEYWORD, 'effect'),
-            $.name_identifier, field("typevars", optional($.type_variables)),
-            $._effect_element_list
-        ),
         impl_block: $ => seq(
             alias($.IMPL_KEYWORD, 'impl'),
             choice(
@@ -180,6 +150,21 @@ module.exports = grammar({
                 ),
             ),
         ),
+        import_declaration: $ => seq(
+            alias($.IMPORT_KEYWORD, 'import'),
+            field("path", $.qname),
+            optional($._import_alias),
+        ),
+        // trait_declaration: $ => seq(
+        //     alias($.TRAIT_KEYWORD, 'trait'),
+        //     field("name", $.name_identifier),
+        //     $._trait_methods_decl,
+        // ),
+        // effect_declaration: $ => seq(
+        //     alias($.EFFECT_KEYWORD, 'effect'),
+        //     $.name_identifier, field("typevars", optional($.type_variables)),
+        //     $._effect_element_list
+        // ),
 
         _import_alias: $ => seq(alias($.AS_KEYWORD, 'as'), field("alias", $.name_identifier)),
 
@@ -189,18 +174,20 @@ module.exports = grammar({
         _match_elements: $ => choice($._case_expr_body, $._case_else_body),
 
         _if_expr_body: $ => prec.left(seq(
-            field("condition", $._expression),
+            // Optional parentheses here makes this a strict superset of the grammar
+            // the compiler actually accepts, as a grouped expression is an expression
+            // nonetheless
+            seq(
+                // alias($.OPEN_PAREN, '('),
+                field("condition", $._expression),
+                // alias($.CLOSE_PAREN, ')'),
+            ),
             field("if", alias($._expression, $.if_expr_body)),
             optional(
                 seq(alias($.ELSE_KEYWORD, 'else'), field("else", alias($._expression, $.else_expr_body))),
             ),
         )),
 
-        // _if_expr_condition: $ => seq(
-        //     alias($.OPEN_PAREN, '('),
-        //     field("condition", $._expression),
-        //     alias($.CLOSE_PAREN, ')'),
-        // ),
         _if_else_body: $ => seq(
             field("condition", optional($.name_identifier)),
             $.THIN_ARROW, field("expr", $._expression),
@@ -211,14 +198,12 @@ module.exports = grammar({
                 field("pattern", $.name_identifier),
                 alias($.IF_KEYWORD, 'if'), field("case_condition", $._expression),
                 $.THIN_ARROW, field("expr", $._expression),
-                // alias($.EOL, '\\n'),
             ),
 
             /* -------------------------------- CaseLiteral ----------------------------- */
             seq(
                 field("pattern", $.literal),
                 $.THIN_ARROW, field("expr", $._expression),
-                // alias($.EOL, '\\n'),
             ),
 
             /* --------------------------------- CaseIs --------------------------------- */
@@ -229,14 +214,12 @@ module.exports = grammar({
                 optional(
                     seq($.THIN_ARROW, field("expr", $._expression)),
                 ),
-                // alias($.EOL, '\\n'),
             ),
         ),
         _case_else_body: $ => seq(
             /* -------------------------------- CaseElse -------------------------------- */
             field("value", optional($.name_identifier)),
             $.THIN_ARROW, field("expr", $._expression),
-            // alias($.EOL, '\\n'),
         ),
         _match_expr_body: $ => prec.left(
             seq(
@@ -279,15 +262,15 @@ module.exports = grammar({
         /* -------------------------------------------------------------------------------------- */
         /* ----------------------------------- Type Declarations -------------------------------- */
         /* -------------------------------------------------------------------------------------- */
-        typevar: _ => /[A-Z][A-Za-z0-9_]*/,
-        type_variables: $ => seq(
-            alias($.OPEN_TYPEVARS, '<'),
-            repeat($._typevars_list_item),
-            alias($.CLOSE_TYPEVARS, '>'),
-        ),
-        _typevars_list_item: $ => seq($.typevar, optional(',')),
+        // typevar: _ => /[A-Z][A-Za-z0-9_]*/,
+        // type_variables: $ => seq(
+        //     alias($.OPEN_TYPEVARS, '<'),
+        //     repeat($._typevars_list_item),
+        //     alias($.CLOSE_TYPEVARS, '>'),
+        // ),
+        // _typevars_list_item: $ => seq($.typevar, optional(',')),
 
-        of_type: $ => seq(alias($.COLON, ':'), optional($.function_effect), $._type),
+        of_type: $ => seq(alias($.COLON, ':'), /* optional($.function_effect), */ $._type),
 
         _assign: $ => seq(alias($.ASSIGN_OP, '='),
                 choice(
@@ -318,12 +301,8 @@ module.exports = grammar({
         ),
         _enum_variants_decl: $ => seq(
             alias($.OPEN_BRACKET, '{'),
-            optional(field("variants", $.typed_names_list)),
-            alias($.CLOSE_BRACKET, '}'),
-        ),
-        _trait_methods_decl: $ => seq(
-            alias($.OPEN_BRACKET, '{'),
-            optional(field("methods", $._trait_decl_elements)),
+            // optional(field("variants", $.typed_names_list)),
+            optional(field("variants", repeat1($.typed_name))),
             alias($.CLOSE_BRACKET, '}'),
         ),
         _stack_namepair_list: $ => seq(
@@ -336,10 +315,15 @@ module.exports = grammar({
             optional(field("signature", $.typed_names_list)),
             alias($.CLOSE_PAREN, ')'),
         ),
+        // _trait_methods_decl: $ => seq(
+        //     alias($.OPEN_BRACKET, '{'),
+        //     optional(field("methods", $._trait_decl_elements)),
+        //     alias($.CLOSE_BRACKET, '}'),
+        // ),
 
-        effect_member_declaration: $ => seq($.name_identifier, $._function_signature_params, $.of_type),
-        _trait_decl_elements: $ => repeat1($.fun_declaration),
-        _effect_elements:     $ => repeat1($.effect_member_declaration),
+        // effect_member_declaration: $ => seq($.name_identifier, $._function_signature_params, $.of_type),
+        // _trait_decl_elements: $ => repeat1($.fun_declaration),
+        // _effect_elements:     $ => repeat1($.effect_member_declaration),
 
         _stack_namepairs: $ => repeat1($.name_literal_pair),
 
@@ -355,17 +339,17 @@ module.exports = grammar({
             $.LOGIC_AND_OP, $.LOGIC_OR_OP, $.LOGIC_NOT_OP,
             '[]',
         ),
-        function_effect: $ => seq(
-            alias($.OPEN_TYPEVARS, '<'),
-            optional($._type),
-            alias($.CLOSE_TYPEVARS, '>'),
-        ),
+        // function_effect: $ => seq(
+        //     alias($.OPEN_TYPEVARS, '<'),
+        //     optional($._type),
+        //     alias($.CLOSE_TYPEVARS, '>'),
+        // ),
 
-        _effect_element_list: $ => seq(
-            alias($.OPEN_BRACKET, '{'),
-            optional($._effect_elements),
-            alias($.CLOSE_BRACKET, '}'),
-        ),
+        // _effect_element_list: $ => seq(
+        //     alias($.OPEN_BRACKET, '{'),
+        //     optional($._effect_elements),
+        //     alias($.CLOSE_BRACKET, '}'),
+        // ),
 
         _type: $ => choice(
             $.sumtype,
@@ -386,7 +370,8 @@ module.exports = grammar({
 
         functiontype: $ => seq(
             alias($.FUN_KEYWORD, 'fun'),
-            field("typevars", optional($.type_variables)), $._funtype_sig_params_list,
+            // field("typevars", optional($.type_variables)),
+            $._funtype_sig_params_list,
             $.THIN_ARROW, field("return_type", $._type),
         ),
         _funtype_sig_params_list: $ => seq(
@@ -478,8 +463,9 @@ module.exports = grammar({
         block_expr: $ => seq(
             alias($.OPEN_BRACKET, '{'),
             choice(
-                $._statement,
-                repeat1(seq($._statement, repeat1(alias($.EOL, '\\n')))),
+                // XXX: do we actually *need* that `$.newline` to be here...?
+                //repeat1(seq($._statement, repeat($.newline))),
+                repeat1($._statement),
                 blank(),
             ),
             alias($.CLOSE_BRACKET, '}'),
@@ -492,11 +478,9 @@ module.exports = grammar({
             alias(numeric_literal(), $.number),
             alias(boolean_literal(), $.boolean),
             alias(string_literal(), $.string),
-            //alias($.postfixnum_literal, $.postfix_number),
         ),
 
         numeric_literal: _ => alias(token(choice(kHexadecimalIntLiteral, kDecimalNumberLiteral)), 'number'),
-        postfixnum_literal: $ => postfixnum_literal($),
 
         name_identifier: _ => kNameIdentifier,
         qname: $ => choice(
@@ -621,14 +605,6 @@ module.exports = grammar({
         CLOSE_TYPEVARS:    _ => '>',
         OPEN_DOC_COMMENT:  _ => '/*',
         CLOSE_DOC_COMMENT: _ => '*/',
-        EOL:               _ => '\n',
-
-        LINE_COMMENT: $ => alias(seq("//", /.+/, alias($.EOL, '\\n')), $.LINE_COMMENT),
-        DOC_COMMENT: $ => alias(seq(
-            $.OPEN_DOC_COMMENT,
-            choice(/.+/, '\n'),
-            $.CLOSE_DOC_COMMENT,
-        ), $.DOC_COMMENT),
 
         /* -------------------------------------------------------------------------------------- */
         /* -------------------------------- Tree-sitter specific -------------------------------- */
@@ -656,7 +632,7 @@ module.exports = grammar({
         $._import_alias,
 
         //$.type_variables,
-        $._typevars_list_item,
+        // $._typevars_list_item,
 
         $._assign, $._fun_assign_expression,
         $.of_type,
@@ -667,9 +643,8 @@ module.exports = grammar({
         //$.typed_names_list,
         $._struct_members_decl, $._stack_namepair_list, $._function_signature_params,
         $._stack_namepairs,
-        $._trait_decl_elements, $._effect_elements, $._effect_element_list,
+        // $._trait_decl_elements, $._effect_elements, $._effect_element_list,
 
-        //$.reference,
         $._namespaced_qname,
 
         $._statement,

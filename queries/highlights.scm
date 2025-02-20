@@ -41,14 +41,17 @@
 (string)	@string
 (boolean)	@constant.builtin
 
-;(LINE_COMMENT)	@comment
+[
+  (line_comment)
+  (block_comment)
+] @comment
 
 (decorator)	@tag
 
 (fun_declaration [
     name: (name_identifier) @function
-    typevars: (type_variables
-                (typevar) @type)
+    ;; typevars: (type_variables
+    ;;             (typevar) @type)
     signature: (typed_names_list
                 (typed_name name: (name_identifier) @variable.parameter
                             type: [(namedtype) @type]))
@@ -62,8 +65,8 @@
 (apply_fun_expr fun: (reference (qname segment: (name_identifier) @variable)) (#is-not? local))
 
 (functiontype [
-    typevars: (type_variables
-                (typevar) @type)
+    ;; typevars: (type_variables
+    ;;             (typevar) @type)
     param_name: (name_identifier) @variable.parameter
     return_type: (namedtype) @type
   ])
